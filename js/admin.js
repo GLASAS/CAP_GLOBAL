@@ -516,8 +516,8 @@ function renderizarTablaReporte(lista) {
                 <td class="fw-bold align-middle ${esAprobado ? 'text-success' : 'text-danger'}">${califTexto}</td>
                 <td class="align-middle">${esAprobado ? '<span class="badge bg-success">Aprobado</span>' : '<span class="badge bg-danger">Reprobado</span>'}</td>
                 <td class="text-center align-middle">
-                    <button class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-pill shadow-sm fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="ejecutarReprobacionAdmin('${r.identificacion}', '${r.idCapacitacion}')" title="Exigir reentrenamiento y reprobar" style="font-size: 11px; transition: all 0.2s ease-in-out;">
-                        <i class="fas fa-redo-alt text-danger"></i> Reprobar / Reentrenar
+                    <button class="btn btn-sm text-white px-3 py-1.5 rounded-pill shadow-sm fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5" onclick="ejecutarReprobacionAdmin('${r.identificacion}', '${r.idCapacitacion}')" title="Exigir reentrenamiento y reprobar" style="background: linear-gradient(135deg, #e63946, #c52233); border: none; font-size: 11px; transition: all 0.2s ease-in-out;">
+                        <i class="fas fa-redo-alt text-white"></i> Reprobar / Reentrenar
                     </button>
                 </td>
             </tr>

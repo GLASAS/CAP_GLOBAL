@@ -134,6 +134,7 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
     if (contadorCulminadas === 0) contenedorCulminadas.innerHTML = `<div class="col-12"><div class="alert alert-light border text-center text-muted py-3 small">Sin capacitaciones culminadas.</div></div>`;
 }
 
+// VALIDACIÓN ROBUSTA CON TIMESTAMP REAL (Sobrevive a F5 y actualizaciones)
 function isVideoCompleted(capId) {
     if (videoCompletadoMap[capId] === true) return true;
     let storageKey = `video_visto_${usuarioIdentificacionGlobal}_${capId}`;
@@ -141,16 +142,37 @@ function isVideoCompleted(capId) {
         videoCompletadoMap[capId] = true;
         return true;
     }
+
+    let startKey = `video_start_${usuarioIdentificacionGlobal}_${capId}`;
+    let startTime = localStorage.getItem(startKey);
+    if (startTime) {
+        let elapsed = Date.now() - parseInt(startTime, 10);
+        if (elapsed >= 180000) { // 180,000 ms = 3 minutos exactos
+            localStorage.setItem(storageKey, 'true');
+            videoCompletadoMap[capId] = true;
+            return true;
+        }
+    }
     return false;
 }
 
 function iniciarTemporizadorVideo(capId, urlVideo) {
     if (isVideoCompleted(capId)) return;
+
+    let startKey = `video_start_${usuarioIdentificacionGlobal}_${capId}`;
+    let startTime = localStorage.getItem(startKey);
+    
+    if (!startTime) {
+        startTime = Date.now();
+        localStorage.setItem(startKey, startTime);
+    }
+
     if (videoTimersMap[capId] !== undefined) return;
 
-    let segundosRestantes = 180; // 3 minutos exactos
     videoTimersMap[capId] = setInterval(() => {
-        segundosRestantes--;
+        let elapsed = Date.now() - parseInt(localStorage.getItem(startKey), 10);
+        let segundosRestantes = Math.max(0, Math.ceil((180000 - elapsed) / 1000));
+
         let min = Math.floor(segundosRestantes / 60);
         let seg = segundosRestantes % 60;
         let tiempoStr = `${min}:${seg < 10 ? '0' : ''}${seg}`;
@@ -235,7 +257,6 @@ function iniciarExamen(capId) {
     .then(res => res.json())
     .then(res => {
         if(res.success) {
-            // PROCESAMIENTO LIMPIO DE LA CELDA E (Opciones_Json separadas por ;)
             let preguntasValidas = (res.preguntas || []).filter(p => {
                 if (!p || !p.pregunta) return false;
                 let txt = String(p.pregunta).trim();
@@ -378,14 +399,13 @@ function navegarPregunta(direccion) {
     }
 }
 
-// TEMPORIZADOR VISIBLE Y OPTIMIZADO PARA CADA PREGUNTA
 function reiniciarTemporizador() {
     if (temporizadorInterval) clearInterval(temporizadorInterval);
     tiempoRestante = 60; // 60 segundos por pregunta
     
     const badgeCronometro = document.getElementById('cronometroExamen');
     if (badgeCronometro) {
-        badgeCronometro.className = "badge bg-danger p-2 fs-5 shadow-sm"; // Más visible y grande
+        badgeCronometro.className = "badge bg-danger p-2 fs-5 shadow-sm";
         badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
     }
 
@@ -399,7 +419,6 @@ function tiempoRest_local() {
     const badgeCronometro = document.getElementById('cronometroExamen');
     if (badgeCronometro) {
         badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
-        // Alerta visual si quedan 15 segundos o menos
         if (tiempoRestante <= 15) {
             badgeCronometro.className = "badge bg-warning text-dark p-2 fs-5 shadow-sm animate-pulse";
         } else {

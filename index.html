@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Life Ambulancias SAS - Plataforma de Capacitaciones</title>
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1Z8zWfdiK3-gM2HyuCeI-u-vAfxsCgeej">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Estilos CSS Modulares -->
+    <link href="css/styles.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container py-4">
+        
+        <!-- PANTALLA DE BIENVENIDA / SELECCIÓN QR -->
+        <div class="login-card d-none" id="cardBienvenidaQR" style="max-width: 500px;">
+            <div class="logo-container">
+                <div class="mb-1">
+                    <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="Logo Global Life Ambulancias SAS" class="brand-logo">
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <h4 class="fw-bold text-dark" style="color: var(--gl-blue-secondary) !important; font-size: 20px;">
+                    Portal Oficial Global Life Ambulancias SAS
+                </h4>
+                <p class="text-muted small mt-1">Seleccione una opción para continuar</p>
+            </div>
+
+            <div class="d-grid gap-3 my-4">
+                <button type="button" class="btn btn-outline-primary py-3 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-3" onclick="irALoginFuncionario()">
+                    <i class="fas fa-user-tie fs-4"></i>
+                    <div class="text-start">
+                        <div class="fs-6">Soy Funcionario</div>
+                        <div style="font-size: 11px; font-weight: normal; opacity: 0.8;">Iniciar sesión en la plataforma</div>
+                    </div>
+                </button>
+
+                <button type="button" class="btn btn-success py-3 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-3" onclick="irAValidarCertificadoDirecto()">
+                    <i class="fas fa-certificate fs-4"></i>
+                    <div class="text-start">
+                        <div class="fs-6">Validar Certificado</div>
+                        <div style="font-size: 11px; font-weight: normal; opacity: 0.8;">Verificar autenticidad mediante código QR</div>
+                    </div>
+                </button>
+
+                <button type="button" class="btn btn-outline-secondary py-3 rounded-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-3" onclick="irAConsultaPublicaCertificados()">
+                    <i class="fas fa-search fs-4"></i>
+                    <div class="text-start">
+                        <div class="fs-6">Consulta de Certificaciones</div>
+                        <div style="font-size: 11px; font-weight: normal; opacity: 0.8;">Consultar cursos y certificados por cédula</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- MÓDULO PÚBLICO DE CONSULTA DE CERTIFICACIONES -->
+        <div class="login-card d-none" id="cardConsultaCertificaciones">
+            <div class="logo-container">
+                <div class="mb-1">
+                    <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="Logo Global Life Ambulancias SAS" class="brand-logo">
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <span class="fw-bold text-dark" style="font-size: 18px; color: var(--gl-blue-secondary) !important;">
+                    <i class="fas fa-search me-2" style="color: var(--gl-blue-primary);"></i> Consulta de Certificaciones
+                </span>
+                <p class="text-muted small mt-2">Consulte los cursos, certificados y capacitaciones asociados a su documento de identidad.</p>
+            </div>
+
+            <form id="formConsultaPublica">
+                <div class="mb-4">
+                    <label class="form-label text-secondary fw-semibold small"><i class="fas fa-id-card me-1"></i> Número de identificación (Cédula)</label>
+                    <input type="text" class="form-control bg-light" id="inputIdentificacionConsulta" placeholder="Ingrese su número de cédula" required>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-ingresar shadow-sm">
+                        <i class="fas fa-search me-2"></i> 🔍 Consultar
+                    </button>
+                </div>
+
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-link text-decoration-none small text-muted p-0" onclick="regresarDesdeConsultaPublica()">
+                        <i class="fas fa-arrow-left me-1"></i> Volver al inicio
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- PANTALLA DE INICIO DE SESIÓN -->
+        <div class="login-card" id="cardLogin">
+            <div class="logo-container">
+                <div class="mb-1">
+                    <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="Logo Global Life Ambulancias SAS" class="brand-logo">
+                </div>
+            </div>
+
+            <div class="text-center mb-4">
+                <span class="fw-bold text-dark" style="font-size: 18px; color: var(--gl-blue-secondary) !important;">
+                    <i class="fas fa-sign-in-alt me-2" style="color: var(--gl-blue-primary);"></i> Iniciar sesión
+                </span>
+            </div>
+
+            <form id="formLogin">
+                <div class="mb-3">
+                    <label class="form-label text-secondary fw-semibold small"><i class="fas fa-user me-1"></i> Usuario (Identificación)</label>
+                    <input type="text" class="form-control bg-light" id="inputUsuario" placeholder="CEDULA" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-secondary fw-semibold small"><i class="fas fa-lock me-1"></i> Contraseña (Fecha Expedición)</label>
+                    <div class="input-group">
+                        <input type="date" class="form-control bg-light border-end-0" id="inputPassword" required>
+                    </div>
+                    <div class="form-text text-muted mt-1.5" style="font-size: 11px;">Seleccione o ingrese la fecha de expedición de su cédula.</div>
+                </div>
+
+                <div class="d-grid mb-3">
+                    <button type="submit" class="btn btn-ingresar shadow-sm">
+                        Ingresar
+                    </button>
+                </div>
+
+                <div id="resultadoLogin" class="mb-3"></div>
+
+                <hr class="text-muted opacity-25 my-4">
+
+                <div class="text-center mt-3">
+                    <span class="text-muted text-uppercase fw-bold" style="font-size: 10px; letter-spacing: 1px;">Navegadores recomendados</span>
+                    <div class="d-flex justify-content-center align-items-center gap-4 mt-3">
+                        <img src="https://lh3.googleusercontent.com/d/1JfQdOkYWxZuBuXrk5dLJzNP_5xbqZA1A" alt="Google Chrome" class="browser-icon" title="Google Chrome">
+                        <img src="https://lh3.googleusercontent.com/d/1NTpCeJqGs9iNwxMT45f8JLNZ-GzCxRRD" alt="Mozilla Firefox" class="browser-icon" title="Mozilla Firefox">
+                        <img src="https://lh3.googleusercontent.com/d/1rnmsTu_RtIMcsrLbYoTlCsLHc_1XOuca" alt="Microsoft Edge" class="browser-icon" title="Microsoft Edge">
+                    </div>
+
+                    <div style="font-size: 11px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-top: 32px;">
+                        Version V2 (Modular)
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- PANEL DE ADMINISTRACIÓN -->
+        <div class="row justify-content-center d-none" id="cardPanelAdmin">
+            <div class="col-lg-10">
+                <div class="card shadow border-0 rounded-4 overflow-hidden mb-4">
+                    <div class="card-header text-white p-4 d-flex justify-content-between align-items-center" style="background-color: var(--gl-blue-secondary);">
+                        <div>
+                            <h3 class="mb-0 fs-5"><i class="fas fa-shield-alt me-2"></i> Portal Administrativo - Global Life Ambulancias SAS</h3>
+                            <p class="mb-0 text-white-50 small mt-1">Bienvenido(a), <span id="nombreAdminLogueado" class="fw-bold text-white"></span></p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-light btn-sm px-3 rounded-pill fw-bold text-primary" onclick="cambiarVistaUsuario()"><i class="fas fa-graduation-cap me-1"></i> Ver Mis Capacitaciones</button>
+                            <button class="btn btn-outline-light btn-sm px-3 rounded-pill" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-1"></i> Salir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NAVEGACIÓN PRINCIPAL DE SECCIONES ADMINISTRATIVAS -->
+                <ul class="nav nav-pills mb-4 gap-2" id="navTabsAdmin" role="tablist">
+                    <li class="nav-item" role="presentation" id="liTabGestion">
+                        <button class="nav-link active rounded-3 fw-bold px-4 py-2.5" id="pills-gestion-tab" data-bs-toggle="pill" data-bs-target="#pills-gestion" type="button" role="tab" onclick="precargarDatosAdmin()">
+                            <i class="fas fa-tasks me-2"></i> Gestión de Capacitaciones
+                        </button>
+                    </li>
+                    <li class="nav-item d-none" role="presentation" id="liTabRegistrarUsuario">
+                        <button class="nav-link rounded-3 fw-bold px-4 py-2.5" id="pills-registrar-usuario-tab" data-bs-toggle="pill" data-bs-target="#pills-registrar-usuario" type="button" role="tab">
+                            <i class="fas fa-user-plus me-2"></i> Registrar / Gestionar Usuario
+                        </button>
+                    </li>
+                    <li class="nav-item d-none" role="presentation" id="liTabReportes">
+                        <button class="nav-link rounded-3 fw-bold px-4 py-2.5" id="pills-reportes-tab" data-bs-toggle="pill" data-bs-target="#pills-reportes" type="button" role="tab" onclick="cargarTablaReportes()">
+                            <i class="fas fa-chart-bar me-2"></i> Reportes e Historial
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="tabContentAdmin">
+                    
+                    <!-- PESTAÑA 1: GESTIÓN DE CAPACITACIONES Y BANCO -->
+                    <div class="tab-pane fade show active" id="pills-gestion" role="tabpanel">
+                        <div class="card shadow border-0 rounded-4 p-4 p-md-5 mb-4 bg-white">
+                            <div id="seccionSelectorModificacion" class="mb-4 p-3 bg-light rounded-3 border d-none">
+                                <label class="form-label small fw-bold text-primary mb-1"><i class="fas fa-edit me-1"></i> Seleccionar Capacitación Existente para Modificar:</label>
+                                <select id="selectCapacitacionMod" class="form-select form-select-sm" onchange="cargarDatosCapacitacionSeleccionada()">
+                                    <option value="">-- Crear una nueva capacitación --</option>
+                                </select>
+                            </div>
+
+                            <form id="formCapacitacion">
+                                <input type="hidden" id="editCapId" value="">
+                                <h5 class="fw-bold mb-4" style="color: var(--gl-blue-primary); font-size: 16px;" id="tituloFormAccion">Información General de la Capacitación</h5>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-secondary">Nombre de la Capacitación</label>
+                                        <input type="text" class="form-control" id="nombreCap" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-secondary">Código</label>
+                                        <input type="text" class="form-control" id="codigoCap" required>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-secondary">Categoría</label>
+                                        <select class="form-select" id="catCap" required>
+                                            <option value="Capacitación" selected>Capacitación</option>
+                                            <option value="Inducción">Inducción</option>
+                                            <option value="Psicología">Psicología</option>
+                                            <option value="Clima Laboral">Clima Laboral</option>
+                                            <option value="Acoso Laboral">Acoso Laboral</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold text-secondary">Responsable</label>
+                                        <input type="text" class="form-control" id="respCap" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-semibold text-secondary">Descripción</label>
+                                        <textarea class="form-control" id="descCap" rows="2" required></textarea>
+                                    </div>
+
+                                    <!-- ÁREAS -->
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-primary"><i class="fas fa-users me-1"></i> Dirigido a las Áreas (Selección Múltiple)</label>
+                                        <div class="p-3 border rounded-3 bg-light" id="contenedorCheckboxesAreas" style="max-height: 160px; overflow-y: auto;">
+                                            <span class="text-muted small">Cargando áreas disponibles...</span>
+                                        </div>
+                                        <div class="form-text text-muted" style="font-size: 11px;">Si no seleccionas ninguna área, se aplicará a todas.</div>
+                                    </div>
+
+                                    <!-- CARGOS -->
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-primary"><i class="fas fa-user-tag me-1"></i> Dirigido a los Cargos (Selección Múltiple)</label>
+                                        <div class="p-3 border rounded-3 bg-light" id="contenedorCheckboxesCargos" style="max-height: 160px; overflow-y: auto;">
+                                            <span class="text-muted small">Cargando cargos disponibles...</span>
+                                        </div>
+                                        <div class="form-text text-muted" style="font-size: 11px;">Si no seleccionas ningún cargo, se aplicará a todos.</div>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold text-secondary">Duración (Horas)</label>
+                                        <input type="number" class="form-control" id="durCap" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-semibold text-secondary">Nota Mínima (%)</label>
+                                        <input type="number" class="form-control" id="notaMin" value="70" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold text-secondary">Intentos Permitidos</label>
+                                        <select class="form-select" id="intentosPermitidos">
+                                            <option value="1" selected>1 Intento</option>
+                                            <option value="2">2 Intentos</option>
+                                            <option value="3">3 Intentos</option>
+                                            <option value="5">5 Intentos</option>
+                                            <option value="0">Ilimitados</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold text-secondary">¿Genera Certificado?</label>
+                                        <select class="form-select" id="generaCertificado">
+                                            <option value="SI" selected>SI</option>
+                                            <option value="NO">NO</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary">Preguntas en Examen (Aleatorias)</label>
+                                        <select class="form-select" id="cantPregExamen">
+                                            <option value="5">5 Preguntas</option>
+                                            <option value="10" selected>10 Preguntas</option>
+                                            <option value="15">15 Preguntas</option>
+                                            <option value="20">20 Preguntas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary">Valor Porcentual por Pregunta</label>
+                                        <input type="text" class="form-control bg-light text-success fw-bold" id="valorPorcentual" value="10.00% por cada acierto" readonly>
+                                    </div>
+                                    <div class="col-12" id="contenedorUrlYoutube">
+                                        <label class="form-label small fw-semibold text-danger"><i class="fab fa-youtube me-1"></i> Enlace de YouTube (Video)</label>
+                                        <input type="url" class="form-control" id="ytUrl" placeholder="https://www.youtube.com/watch?v=...">
+                                    </div>
+                                    <div class="col-12" id="contenedorUrlPdf">
+                                        <label class="form-label small fw-semibold text-primary"><i class="fas fa-file-pdf me-1"></i> Enlace o URL del Documento PDF (Para visor web)</label>
+                                        <input type="url" class="form-control" id="pdfUrl" placeholder="https://... o enlace de Google Drive">
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 mt-4 pt-2">
+                                    <button type="submit" id="btnAccionForm" class="btn btn-success py-3 rounded-3 fw-bold shadow-sm">
+                                        <i class="fas fa-save me-2"></i> Guardar Capacitación y Examen
+                                    </button>
+                                </div>
+                            </form>
+
+                            <hr class="my-5">
+
+                            <!-- BANCO DE PREGUNTAS -->
+                            <h5 class="fw-bold mb-3" style="color: var(--gl-blue-primary); font-size: 16px;"><i class="fas fa-question-circle me-2"></i> Gestión del Banco de Preguntas</h5>
+
+                            <ul class="nav nav-tabs mb-4" id="subtabBanco" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active fw-bold" id="sub-masiva-tab" data-bs-toggle="tab" data-bs-target="#sub-masiva" type="button" role="tab"><i class="fas fa-file-excel me-2"></i> Carga Masiva (Excel)</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link fw-bold" id="sub-manual-tab" data-bs-toggle="tab" data-bs-target="#sub-manual" type="button" role="tab"><i class="fas fa-edit me-2"></i> Crear Manual</button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="sub-masiva" role="tabpanel">
+                                    <div class="p-4 border rounded-3 bg-white">
+                                        <h6 class="text-success fw-bold mb-3"><i class="fas fa-cloud-upload-alt me-2"></i> Subir Plantilla de Cuestionario</h6>
+                                        <p class="text-muted small">Selecciona tu archivo <code>.xlsx</code> con las preguntas. El sistema anidará las preguntas a la capacitación seleccionada abajo.</p>
+                                        
+                                        <div class="mb-4">
+                                            <a href="https://docs.google.com/uc?export=download&id=1fmhmiDfErXWvrV27qcajxbnzZJijyQ0y" class="btn btn-outline-primary btn-sm rounded-pill fw-bold px-3 py-2 shadow-sm" target="_blank">
+                                                <i class="fas fa-download me-2"></i> Descargar Plantilla de Preguntas (.xlsx)
+                                            </a>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold text-primary"><i class="fas fa-link me-1"></i> Anidar a Capacitación:</label>
+                                            <select class="form-select form-select-sm" id="excelCapAnidada" required>
+                                                <option value="">-- Seleccione la capacitación correspondiente --</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <input type="file" class="form-control" id="excelFile" accept=".xlsx, .xls, .csv">
+                                        </div>
+                                        <button type="button" class="btn btn-success mb-3" id="btnProcesar" onclick="procesarExcelPorLotes()">
+                                            <i class="fas fa-upload me-2"></i> Procesar y Subir al Banco
+                                        </button>
+                                        <div id="resultadoSalida" class="mt-3"></div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="sub-manual" role="tabpanel">
+                                    <form id="formPreguntaManual">
+                                        <h6 class="text-primary fw-bold mb-3">Registrar Pregunta Individual</h6>
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label">Texto de la Pregunta</label>
+                                                <textarea class="form-control" id="mPregunta" rows="2" required></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Tipo de Pregunta</label>
+                                                <select class="form-select" id="mTipo">
+                                                    <option value="Unica">Opción Múltiple (Única respuesta)</option>
+                                                    <option value="VerdaderoFalso">Verdadero / Falso</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold text-primary">Anidar a Capacitación</label>
+                                                <select class="form-select" id="mCapacitacionNombre" required>
+                                                    <option value="">-- Seleccione Capacitación --</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4 d-none">
+                                                <label class="form-label">Categoría</label>
+                                                <input type="text" class="form-control" id="mCategoria" value="Capacitación">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Puntaje</label>
+                                                <input type="number" class="form-control" id="mPuntaje" value="5" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Dificultad</label>
+                                                <select class="form-select" id="mDificultad">
+                                                    <option value="Media" selected>Media</option>
+                                                    <option value="Facil">Fácil</option>
+                                                    <option value="Alta">Alta</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Opciones (Separadas por punto y coma ; )</label>
+                                                <input type="text" class="form-control" id="mOpciones" placeholder="Opción A; Opción B; Opción C; Opción D" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label">Respuesta Correcta exacta</label>
+                                                <input type="text" class="form-control" id="mRespuesta" placeholder="Debe coincidir exactamente con una de las opciones" required>
+                                            </div>
+                                            <div class="col-12">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i> Guardar Pregunta
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO 2: REGISTRAR / GESTIONAR USUARIO -->
+                    <div class="tab-pane fade" id="pills-registrar-usuario" role="tabpanel">
+                        <div class="card shadow border-0 rounded-4 p-4 p-md-5 mb-4 bg-white">
+                            <h5 class="fw-bold mb-3" style="color: var(--gl-blue-primary); font-size: 16px;">
+                                <i class="fas fa-user-plus me-2"></i> Registrar o Actualizar Usuario / Funcionario
+                            </h5>
+                            <p class="text-muted small mb-4">Ingrese primero el número de identificación. Si el funcionario ya está registrado, sus datos se cargarán automáticamente.</p>
+
+                            <form id="formCrearUsuario">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Identificación (Cédula) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="uIdentificacion" required placeholder="Ej: 80092734" onblur="verificarUsuarioExiste()">
+                                            <button class="btn btn-outline-primary" type="button" onclick="verificarUsuarioExiste()" title="Buscar usuario"><i class="fas fa-search"></i></button>
+                                        </div>
+                                        <div id="mensajeEstadoUsuario" class="form-text text-primary fw-semibold" style="font-size: 11px;"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Fecha de Expedición (Contraseña)</label>
+                                        <input type="date" class="form-control" id="uFechaExpedicion" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Nombre Completo</label>
+                                        <input type="text" class="form-control" id="uNombre" required placeholder="NOMBRES Y APELLIDOS">
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Cargo</label>
+                                        <input type="text" class="form-control" id="uCargo" required placeholder="Ej: LIDER TALENTO HUMANO">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Área</label>
+                                        <input type="text" class="form-control" id="uArea" required placeholder="Ej: TALENTO HUMANO">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold text-secondary">Estado</label>
+                                        <select class="form-select" id="uEstado">
+                                            <option value="ACTIVO" selected>ACTIVO</option>
+                                            <option value="INACTIVO">INACTIVO</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary">¿Es Administrador? (ADMIN)</label>
+                                        <select class="form-select" id="uAdmin">
+                                            <option value="" selected>NO (Funcionario Estándar)</option>
+                                            <option value="SI">SI (Administrador)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold text-secondary">¿Puede Modificar? (MODIFICACION)</label>
+                                        <select class="form-select" id="uModificacion">
+                                            <option value="" selected>NO</option>
+                                            <option value="SI">SI (Permiso completo)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 mt-4">
+                                    <button type="submit" id="btnGuardarUsuario" class="btn btn-primary py-3 rounded-3 fw-bold shadow-sm">
+                                        <i class="fas fa-user-check me-2"></i> Guardar / Actualizar Usuario
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- PESTAÑA 3: REPORTES E HISTORIAL -->
+                    <div class="tab-pane fade" id="pills-reportes" role="tabpanel">
+                        <div class="card shadow border-0 rounded-4 p-4 p-md-5 mb-4 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                                <div>
+                                    <h5 class="fw-bold text-dark m-0"><i class="fas fa-chart-line text-primary me-2"></i> Dashboard de Resultados e Historial</h5>
+                                    <p class="text-muted small m-0 mt-1">Consolidado general de evaluaciones presentadas por los funcionarios.</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill fw-bold" onclick="cargarTablaReportes()">
+                                        <i class="fas fa-sync-alt me-1"></i> Actualizar
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm rounded-pill fw-bold" onclick="exportarReporteExcel()">
+                                        <i class="fas fa-file-excel me-1"></i> Exportar a Excel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                        <input type="text" class="form-control border-start-0" id="inputBuscarReporte" placeholder="Buscar por funcionario, cédula o capacitación..." onkeyup="filtrarTablaReportes()">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" id="selectFiltroEstado" onchange="filtrarTablaReportes()">
+                                        <option value="">Todos los Estados</option>
+                                        <option value="Aprobado">Aprobados</option>
+                                        <option value="Reprobado">Reprobados</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive rounded-3 border bg-white" style="max-height: 480px; overflow-y: auto;">
+                                <table class="table table-hover align-middle mb-0 text-center" id="tablaReportes">
+                                    <thead class="table-light sticky-top" style="font-size: 13px;">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Identificación</th>
+                                            <th>Funcionario</th>
+                                            <th>Cargo / Área</th>
+                                            <th>Capacitación</th>
+                                            <th>Calificación</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyReportes" style="font-size: 13px;">
+                                        <tr>
+                                            <td colspan="7" class="text-muted py-4">Haz clic en <b>Actualizar</b> para cargar los datos del servidor.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE USUARIO FINAL -->
+        <div class="row justify-content-center d-none" id="cardPanelUsuario">
+            <div class="col-lg-10" id="vistaListaCapacitaciones">
+                <div class="card shadow border-0 rounded-4 overflow-hidden mb-4">
+                    <div class="card-header text-white p-4 d-flex justify-content-between align-items-center" style="background-color: var(--gl-blue-secondary);">
+                        <div>
+                            <h3 class="mb-0 fs-5"><i class="fas fa-graduation-cap me-2"></i> Portal de Capacitaciones - Colaborador</h3>
+                            <p class="mb-0 text-white-50 small mt-1">Bienvenido(a), <span id="nombreUsuarioLogueado" class="fw-bold text-white"></span></p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button id="btnVolverAdmin" class="btn btn-light btn-sm px-3 rounded-pill fw-bold text-primary d-none" onclick="regresarAlAdmin()"><i class="fas fa-cog me-1"></i> Panel Admin</button>
+                            <button class="btn btn-outline-light btn-sm px-3 rounded-pill" onclick="cerrarSesion()"><i class="fas fa-sign-out-alt me-1"></i> Salir</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PENDIENTES -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                        <span class="px-3 fw-bold text-secondary text-uppercase" style="font-size: 13px; letter-spacing: 1px;">
+                            <i class="fas fa-clock me-1 text-primary"></i> Capacitaciones Pendientes / Por Cursar
+                        </span>
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                    </div>
+                    <div class="row g-4" id="contenedorCapacitacionesPendientes"></div>
+                </div>
+
+                <!-- CULMINADAS -->
+                <div class="mb-4">
+                    <div class="d-flex align-items-center my-4">
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                        <span class="px-3 fw-bold text-success text-uppercase" style="font-size: 13px; letter-spacing: 1px;">
+                            <i class="fas fa-check-circle me-1"></i> Capacitaciones Culminadas y Certificadas
+                        </span>
+                        <hr class="flex-grow-1 border-secondary opacity-25">
+                    </div>
+                    <div class="row g-4" id="contenedorCapacitacionesCulminadas"></div>
+                </div>
+
+            </div>
+
+            <!-- VALIDACIÓN DE CERTIFICADO -->
+            <div class="col-lg-8 d-none" id="vistaValidacionCertificado">
+                <div class="card shadow border-0 rounded-4 p-5 bg-white text-center">
+                    <div class="mb-4">
+                        <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="Logo" style="max-height: 90px;">
+                    </div>
+                    <h3 class="fw-bold text-primary mb-2">Verificación de Certificado</h3>
+                    <p class="text-muted mb-4">Sistema Oficial de Validación de Autenticidad - Global Life Ambulancias SAS</p>
+
+                    <div id="contenidoResultadoValidacion" class="p-4 rounded-4 bg-light border mb-4 text-start"></div>
+
+                    <div>
+                        <button class="btn btn-outline-primary px-4 rounded-pill fw-bold" onclick="regresarDesdeValidacion()">
+                            <i class="fas fa-arrow-left me-2"></i> Volver a la Plataforma
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONSULTA PÚBLICA -->
+            <div class="col-lg-10 d-none" id="vistaResultadoConsultaPublica">
+                <div class="card shadow border-0 rounded-4 p-4 p-md-5 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                        <div>
+                            <h4 class="fw-bold text-primary mb-1"><i class="fas fa-award me-2"></i> Certificados y Cursos Registrados</h4>
+                            <p class="text-muted small mb-0">Consulta pública de historial de formación - Global Life Ambulancias SAS</p>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="regresarDesdeConsultaPublica()">
+                            <i class="fas fa-arrow-left me-1"></i> Nueva Consulta
+                        </button>
+                    </div>
+
+                    <div id="contenidoDatosFuncionarioConsulta" class="mb-4 p-4 rounded-4 bg-light border"></div>
+
+                    <h5 class="fw-bold text-dark mb-3"><i class="fas fa-list-alt me-2 text-primary"></i> Listado de Cursos y Certificaciones</h5>
+                    
+                    <div class="table-responsive rounded-3 border bg-white" style="max-height: 480px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0 text-center">
+                            <thead class="table-light sticky-top" style="font-size: 13px;">
+                                <tr>
+                                    <th>Nombre del curso</th>
+                                    <th>Categoría</th>
+                                    <th>Fecha de realización</th>
+                                    <th>Fecha de expedición</th>
+                                    <th>Intensidad horaria</th>
+                                    <th>Estado</th>
+                                    <th>Número del certificado</th>
+                                    <th>Código único</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyTablaCursosConsulta" style="font-size: 13px;"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VISOR PDF -->
+            <div class="col-lg-10 d-none" id="vistaVisorPDF">
+                <div class="card shadow border-0 rounded-4 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+                        <h5 class="fw-bold text-primary mb-0" id="tituloPdfModal"><i class="fas fa-file-pdf me-2"></i> Lectura de Documento PDF</h5>
+                        <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="cerrarVisorPDF()"><i class="fas fa-arrow-left me-1"></i> Volver a Capacitaciones</button>
+                    </div>
+
+                    <div class="border rounded-3 p-2 bg-light text-center" style="height: 600px;">
+                        <iframe id="iframePdfViewer" src="" style="width: 100%; height: 100%; border: none;" allow="autoplay"></iframe>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXAMEN INTERACTIVO -->
+            <div class="col-lg-10 d-none" id="vistaExamenInteractivo">
+                <div class="card shadow border-0 rounded-4 p-4 p-md-5 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+                        <div>
+                            <h4 class="fw-bold text-primary mb-1" id="tituloExamenCap">Evaluación</h4>
+                            <p class="text-muted small mb-0">Responde cada pregunta. Tienes 60 segundos por pregunta.</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-danger p-2 fs-6" id="cronometroExamen"><i class="fas fa-clock me-1"></i> 60s</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-light rounded-3 border">
+                        <span class="small fw-bold text-secondary d-block mb-2">Panel de Preguntas:</span>
+                        <div class="d-flex flex-wrap gap-2" id="cuadrosNavegacionPreguntas"></div>
+                    </div>
+
+                    <div id="contenedorPreguntaActual" class="mb-4"></div>
+
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <button type="button" class="btn btn-outline-secondary px-4 rounded-pill fw-bold" id="btnAnteriorPregunta" onclick="navegarPregunta(-1)">
+                            <i class="fas fa-arrow-left me-2"></i> Anterior
+                        </button>
+                        <button type="button" class="btn btn-primary px-4 rounded-pill fw-bold" id="btnSiguientePregunta" onclick="navegarPregunta(1)">
+                            Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        <button type="button" class="btn btn-success px-4 rounded-pill fw-bold d-none" id="btnFinalizarExamen" onclick="confirmarEnvioExamen()">
+                            <i class="fas fa-paper-plane me-2"></i> Finalizar y Enviar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PLANTILLA CERTIFICADO PDF -->
+    <div style="display: none;">
+      <div id="certificadoPDF" style="width: 1123px; height: 794px; padding: 35px 55px; background: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; border: 8px solid #1e3a8a; overflow: hidden;">
+        
+        <div style="position: absolute; right: -30px; bottom: -30px; width: 420px; height: 420px; opacity: 0.12; pointer-events: none; z-index: 0; transform: rotate(-10deg); display: flex; align-items: center; justify-content: center;">
+          <img src="https://lh3.googleusercontent.com/d/17JZ5EQHX9VgU_jgYNIf5dZQjPl5IHGJu" style="width: 100%; height: 100%; object-fit: contain;" alt="Marca de Agua">
+        </div>
+
+        <div style="position: absolute; top: 14px; left: 14px; right: 14px; bottom: 14px; border: 1.5px solid #94a3b8; pointer-events: none; z-index: 1;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; z-index: 2; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-top: 4px;">
+          <div style="width: 38%; text-align: left;">
+            <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" style="max-height: 85px; width: auto;" alt="Logo">
+          </div>
+          <div style="width: 24%; text-align: center;"></div>
+          <div style="width: 38%; text-align: right;">
+            <p style="font-size: 13px; color: #1e3a8a; text-transform: uppercase; letter-spacing: 1.5px; margin: 0; font-weight: bold;">GLOBAL LIFE AMBULANCIAS SAS</p>
+            <p style="font-size: 11px; color: #64748b; margin: 3px 0 0 0;">Formación y Talento Humano</p>
+          </div>
+        </div>
+
+        <div style="text-align: center; z-index: 2; margin: 2px 0 0 0;">
+          <div style="text-align: center; margin-bottom: 8px;">
+            <img src="https://lh3.googleusercontent.com/d/11tQ-sTQC5Tklpz8lyHY0GG5x_C2M38TA" style="max-height: 130px; width: auto;" alt="Escudo">
+          </div>
+
+          <h1 style="font-size: 32px; color: #1e3a8a; text-transform: uppercase; letter-spacing: 3.5px; margin: 0 0 6px 0; font-weight: 800;">CERTIFICADO DE APROBACIÓN</h1>
+          <p style="font-size: 14px; color: #64748b; margin: 0 0 12px 0; letter-spacing: 1px; font-weight: 600;">LA DIRECCIÓN DE TALENTO HUMANO HACE CONSTAR QUE:</p>
+          
+          <h2 id="certNombreUsuario" style="font-size: 36px; color: #0f172a; margin: 0 0 8px 0; font-weight: 800; text-transform: uppercase;">[NOMBRE DEL COLABORADOR]</h2>
+          
+          <p style="font-size: 15px; color: #475569; margin: 0 0 12px 0;">Identificado(a) con Cédula de Ciudadanía N° <strong id="certIdentificacion" style="color: #0f172a; font-size: 16px;">[CEDULA]</strong></p>
+          
+          <p style="font-size: 14px; color: #334155; margin: 0 0 10px 0; line-height: 1.4;">Completó y aprobó satisfactoriamente los requisitos del programa de capacitación en:</p>
+          
+          <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; padding: 12px 20px; border-radius: 8px; margin: 0 auto 12px auto; width: 88%;">
+            <h3 id="certNombreCapacitacion" style="font-size: 22px; color: #1e3a8a; margin: 0; font-weight: bold;">[NOMBRE DE LA CAPACITACIÓN]</h3>
+          </div>
+
+          <div style="font-size: 13px; color: #334155; line-height: 1.5;">
+            CERTIFICADO No. <strong id="certNumeroUnico" style="color: #0f172a; font-size: 14px;">[NUMERO]</strong><br>
+            Fecha de realización: <strong id="certFechaExpedicion" style="color: #0f172a; font-size: 14px;">[FECHA]</strong>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; z-index: 2; padding: 0 20px; margin-top: 4px;">
+          <div style="width: 30%; text-align: left;">
+            <p style="font-size: 10px; color: #64748b; margin: 0; line-height: 1.4;">Escanee el código QR para verificar la autenticidad de este documento en el portal corporativo oficial.</p>
+          </div>
+
+          <div style="text-align: center; width: 22%; display: flex; flex-direction: column; align-items: center;">
+            <div style="position: relative; padding: 4px; background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; display: inline-block; width: 84px; height: 84px; box-sizing: border-box;">
+              <img src="https://lh3.googleusercontent.com/d/1rQwY8VD-q686oCfkxy1vUzOOhgXLzmZQ=s220" style="width: 100%; height: 100%; object-fit: contain;" alt="QR">
+            </div>
+            <span style="font-size: 9px; color: #64748b; margin-top: 4px; font-weight: bold;">Validación</span>
+          </div>
+
+          <div style="text-align: center; width: 30%; position: relative;">
+            <div style="position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 190px; pointer-events: none; z-index: 1;">
+              <img src="https://lh3.googleusercontent.com/d/1mOirYD1unmQYnrLYweeI7TQM9iDEHKvk" style="width: 100%; height: auto; object-fit: contain;" alt="Firma">
+            </div>
+            <div style="border-bottom: 1.5px solid #475569; margin-bottom: 4px; height: 42px; position: relative; z-index: 2;"></div>
+            <p style="font-size: 12px; font-weight: bold; margin: 0; color: #0f172a; position: relative; z-index: 2;">Líder de Talento Humano</p>
+            <p style="font-size: 10px; color: #64748b; margin: 2px 0 0 0; position: relative; z-index: 2;">Global Life Ambulancias SAS</p>
+          </div>
+        </div>
+
+        <div style="text-align: center; z-index: 2; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+          <p style="font-size: 9px; color: #94a3b8; margin: 0; letter-spacing: 0.5px;">
+            Documento generado automáticamente por la Plataforma de Capacitaciones Global Life Ambulancias SAS.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts Modulares -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/student.js"></script>
+    <script src="js/certificate.js"></script>
+</body>
+</html>

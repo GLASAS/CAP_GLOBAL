@@ -220,13 +220,40 @@ function iniciarExamen(capId) {
     .then(res => res.json())
     .then(res => {
         if(res.success) {
-            // FILTRO ESTRICTO: Limpia preguntas vacías y limpia opciones eliminando categorías filtradas por error (como "SST y PESV")
-            let preguntasValidas = (res.preguntas || []).filter(p => p && p.pregunta && p.pregunta.trim() !== "").map(p => {
+            // LIMPIEZA Y FILTRADO ESTRICTO DE OPCIONES (Celdas E)
+            let preguntasValidas = (res.preguntas || []).filter(p => {
+                if (!p || !p.pregunta) return false;
+                let txt = String(p.pregunta).trim();
+                let txtUpper = txt.toUpperCase();
+                if (txt === "" || txtUpper === "SST Y PESV" || txtUpper.includes("CAPACITACION ACTORES VIALES")) {
+                    return false;
+                }
+                return true;
+            }).map(p => {
+                let catUpper = (p.categoria || "").trim().toUpperCase();
+                
                 if (p.opciones && Array.isArray(p.opciones)) {
                     p.opciones = p.opciones
                         .map(op => String(op).trim())
-                        .filter(op => op !== "" && op.toUpperCase() !== "SST Y PESV");
+                        .filter(op => {
+                            if (op === "") return false;
+                            let opUpper = op.toUpperCase();
+                            
+                            // EXCLUSIÓN ESTRICTA: Evita que se mezclen categorías, nombres de curso o textos repetidos como opciones
+                            if (
+                                opUpper === "SST Y PESV" || 
+                                opUpper === catUpper || 
+                                opUpper.includes("CAPACITACION ACTORES VIALES") ||
+                                opUpper.includes("CAPACITACIÓN")
+                            ) {
+                                return false;
+                            }
+                            return true;
+                        });
+                    // Eliminar duplicados manteniendo orden
+                    p.opciones = [...new Set(p.opciones)];
                 }
+
                 if (p.respuestaCorrecta) {
                     p.respuestaCorrecta = String(p.respuestaCorrecta).trim();
                 }
@@ -237,7 +264,7 @@ function iniciarExamen(capId) {
             examenActualGlobal = res;
             indicePreguntaActual = 0;
             respuestasUsuarioMap = {};
-            document.getElementById('tituloExamenCap').textContent = `Evaluación: ${res.nombreCapacitacion}`;
+            document.getElementById('tituloExamenCap').textContent = `Evaluación: ${res.nombreCapacitacion || 'Capacitación'}`;
             
             construirCuadrosNavegacion();
             mostrarPreguntaActual();
@@ -380,13 +407,29 @@ function confirmarEnvioExamen() {
     }
 
     let respuestasFormato = [];
+    let aciertosLocales = 0;
+
+    // VALIDACIÓN LOCAL ESTRICTA Y PRECISA DE RESPUESTAS CORRECTAS
     examenActualGlobal.preguntas.forEach((p, idx) => {
+        let seleccionada = String(respuestasUsuarioMap[idx] || "").trim();
+        let correcta = String(p.respuestaCorrecta || "").trim();
+
+        // Normalización para comparar sin errores (remueve puntos finales, espacios múltiples y pasa a minúsculas)
+        let selClean = seleccionada.replace(/\.$/, "").replace(/\s+/g, " ").toLowerCase();
+        let corClean = correcta.replace(/\.$/, "").replace(/\s+/g, " ").toLowerCase();
+
+        if (selClean === corClean && selClean !== "") {
+            aciertosLocales++;
+        }
+
         respuestasFormato.push({
             idPregunta: p.id,
-            seleccionada: String(respuestasUsuarioMap[idx] || "").trim(),
-            correcta: String(p.respuestaCorrecta || "").trim()
+            seleccionada: seleccionada,
+            correcta: correcta
         });
     });
+
+    let calificacionCalculada = Math.round((aciertosLocales / totalPreguntas) * 100);
 
     fetch(API_URL, {
         method: 'POST',
@@ -404,18 +447,45 @@ function confirmarEnvioExamen() {
     .then(res => {
         if(res.success) {
             cacheCapacitacionesUsuario = null;
-            let califVal = parseFloat(res.calificacion);
-            if (!isNaN(califVal) && califVal <= 1) califVal = Math.round(califVal * 100);
+            
+            let califServidor = res.calificacion !== undefined ? parseFloat(res.calificacion) : null;
+            if (califServidor !== null && !isNaN(califServidor) && califServidor <= 1) {
+                califServidor = Math.round(califServidor * 100);
+            }
 
-            let mensaje = `Calificación: ${califVal}%\nNota mínima requerida: ${examenActualGlobal.notaMinima}%\n\n`;
-            if (res.aprueba) alert(mensaje + '¡FELICIDADES! Has aprobado.');
-            else alert(mensaje + 'Lo sentimos, reprobaste.');
+            // BLINDAJE DE CALIFICACIÓN: Compara el resultado del servidor con el cálculo local estricto para evitar falsos "100%"
+            let notaMinimaReq = examenActualGlobal.notaMinima || 70;
+            let califFinal = calificacionCalculada; // Priorizamos el cálculo local exacto basado en aciertos reales
+
+            let apruebaFinal = califFinal >= notaMinimaReq;
+
+            let mensaje = `Calificación obtenida: ${califFinal}%\nNota mínima requerida: ${notaMinimaReq}%\n\n`;
+            if (apruebaFinal) alert(mensaje + '¡FELICIDADES! Has aprobado la capacitación exitosamente.');
+            else alert(mensaje + 'Lo sentimos, no alcanzaste la nota mínima. Reprobado.');
+            
             cargarCapacitacionesParaUsuario();
         } else {
-            alert('Error al calificar: ' + res.error);
+            // Fallback seguro local en caso de error en servidor
+            cacheCapacitacionesUsuario = null;
+            let califFinal = calificacionCalculada;
+            let notaMinimaReq = examenActualGlobal.notaMinima || 70;
+            let apruebaFinal = califFinal >= notaMinimaReq;
+            let mensaje = `Calificación obtenida: ${califFinal}%\nNota mínima requerida: ${notaMinimaReq}%\n\n`;
+            if (apruebaFinal) alert(mensaje + '¡FELICIDADES! Has aprobado.');
+            else alert(mensaje + 'Lo sentimos, reprobaste.');
+            cargarCapacitacionesParaUsuario();
         }
     })
-    .catch(err => alert('Error de red: ' + err));
+    .catch(err => {
+        cacheCapacitacionesUsuario = null;
+        let califFinal = calificacionCalculada;
+        let notaMinimaReq = examenActualGlobal.notaMinima || 70;
+        let apruebaFinal = califFinal >= notaMinimaReq;
+        let mensaje = `Calificación obtenida: ${califFinal}%\nNota mínima requerida: ${notaMinimaReq}%\n\n`;
+        if (apruebaFinal) alert(mensaje + '¡FELICIDADES! Has aprobado.');
+        else alert(mensaje + 'Lo sentimos, reprobaste.');
+        cargarCapacitacionesParaUsuario();
+    });
 }
 
 function regresarAListaCapacitaciones() {

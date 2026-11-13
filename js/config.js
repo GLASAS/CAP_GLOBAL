@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbzt3fQPlGQbAitN55kSShur-wWKam_Sx6uc3hngg4pEVhrULzWHu7Fgh1woyXTRZn6N/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwESOp-wBClb-qWg-oPcQXcJEPxSgdGudxaNlC5ZzTr028Yt31Yj9C4sn_9j5TGCVCM/exec";
 
 let listaCapacitacionesGlobal = [];
 let usuarioPuedeModificar = false;

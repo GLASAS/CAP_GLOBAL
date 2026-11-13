@@ -1,0 +1,83 @@
+:root {
+    --gl-blue-primary: #2263fc;
+    --gl-blue-secondary: #2956b1;
+    --gl-blue-light: #659bee;
+}
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333333;
+}
+.login-card {
+    max-width: 420px;
+    margin: 40px auto;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(34, 99, 207, 0.08);
+    padding: 35px 30px;
+    border-top: 5px solid var(--gl-blue-primary);
+}
+.logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.brand-logo {
+    max-height: 120px;
+    width: auto;
+    object-fit: contain;
+}
+.btn-ingresar {
+    background-color: var(--gl-blue-primary);
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    color: #ffffff;
+    transition: all 0.2s ease-in-out;
+}
+.btn-ingresar:hover {
+    background-color: var(--gl-blue-secondary);
+}
+.form-control, .form-select {
+    border-radius: 10px;
+    padding: 11px 14px;
+    border-color: #cbd5e1;
+    font-size: 14px;
+}
+.form-control:focus, .form-select:focus {
+    border-color: var(--gl-blue-light);
+    box-shadow: 0 0 0 0.25rem rgba(34, 99, 207, 0.15);
+}
+.browser-icon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    transition: transform 0.2s;
+}
+.browser-icon:hover {
+    transform: scale(1.1);
+}
+.cuadro-pregunta {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #475569;
+    transition: all 0.2s;
+}
+.cuadro-pregunta.respondida {
+    background-color: #198754;
+    color: white;
+    border-color: #198754;
+}
+.cuadro-pregunta.actual {
+    border-color: var(--gl-blue-primary);
+    box-shadow: 0 0 0 3px rgba(34, 99, 207, 0.25);
+}

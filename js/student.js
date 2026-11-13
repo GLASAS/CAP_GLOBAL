@@ -51,7 +51,6 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
         } else {
             contadorPendientes++;
             
-            // Lógica de restricción de video: Si tiene video y no se han completado los 3 min, el examen inicia bloqueado
             let tieneVideo = cap.videoUrl && cap.videoUrl.trim() !== "";
             let videoListo = !tieneVideo || videoCompletadoMap[cap.id] === true;
 
@@ -86,7 +85,7 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
             if (yaVisto) {
                 estadoVideoHtml = `<span class="badge bg-success mt-1 d-block"><i class="fas fa-check-circle"></i> Video visto (3 min cumplidos) - Examen habilitado</span>`;
             } else if (timerActivo) {
-                estadoVideoHtml = `<span id="timer_video_lbl_${cap.id}" class="badge bg-warning text-dark mt-1 d-block"><i class="fas fa-clock fa-spin"></i> Vistas el video... (Esperando 3 min)</span>`;
+                estadoVideoHtml = `<span id="timer_video_lbl_${cap.id}" class="badge bg-warning text-dark mt-1 d-block"><i class="fas fa-clock fa-spin"></i> Viendo video... (Esperando 3 min)</span>`;
             } else {
                 estadoVideoHtml = `<span class="badge bg-secondary mt-1 d-block">Obligatorio: Ver video 3 minutos para desbloquear evaluación</span>`;
             }
@@ -134,11 +133,10 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
     if (contadorCulminadas === 0) contenedorCulminadas.innerHTML = `<div class="col-12"><div class="alert alert-light border text-center text-muted py-3 small">Sin capacitaciones culminadas.</div></div>`;
 }
 
-// Función para activar el temporizador obligatorio de 3 min al hacer clic en ver video
 function iniciarTemporizadorVideo(capId, urlVideo) {
     if (videoCompletadoMap[capId] === true || videoTimersMap[capId] !== undefined) return;
 
-    let segundosRestantes = 180; // 3 minutos exactos
+    let segundosRestantes = 180; // 3 minutos
     videoTimersMap[capId] = setInterval(() => {
         segundosRestantes--;
         let min = Math.floor(segundosRestantes / 60);
@@ -222,8 +220,18 @@ function iniciarExamen(capId) {
     .then(res => res.json())
     .then(res => {
         if(res.success) {
-            // CORRECCIÓN DEL BUG DE PREGUNTA FANTASMA (Filtra objetos vacíos o nulos)
-            let preguntasValidas = (res.preguntas || []).filter(p => p && p.pregunta && p.pregunta.trim() !== "");
+            // FILTRO ESTRICTO: Limpia preguntas vacías y limpia opciones eliminando categorías filtradas por error (como "SST y PESV")
+            let preguntasValidas = (res.preguntas || []).filter(p => p && p.pregunta && p.pregunta.trim() !== "").map(p => {
+                if (p.opciones && Array.isArray(p.opciones)) {
+                    p.opciones = p.opciones
+                        .map(op => String(op).trim())
+                        .filter(op => op !== "" && op.toUpperCase() !== "SST Y PESV");
+                }
+                if (p.respuestaCorrecta) {
+                    p.respuestaCorrecta = String(p.respuestaCorrecta).trim();
+                }
+                return p;
+            });
 
             res.preguntas = preguntasValidas;
             examenActualGlobal = res;
@@ -375,8 +383,8 @@ function confirmarEnvioExamen() {
     examenActualGlobal.preguntas.forEach((p, idx) => {
         respuestasFormato.push({
             idPregunta: p.id,
-            seleccionada: respuestasUsuarioMap[idx] || "",
-            correcta: p.respuestaCorrecta
+            seleccionada: String(respuestasUsuarioMap[idx] || "").trim(),
+            correcta: String(p.respuestaCorrecta || "").trim()
         });
     });
 

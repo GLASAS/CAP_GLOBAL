@@ -395,7 +395,7 @@ async function procesarExcelPorLotes() {
                 let opcionesArr = [];
 
                 if (typeof opcionesRaw === 'string') {
-                    opcionesArr = opcionesRaw.includes(';') ? opcionesRaw.split(';').map(o => o.trim()) : opcionesRaw.split(',').map(o => o.trim());
+                    opcionesArr = opcionesRaw.includes('||') ? opcionesRaw.split('||').map(o => o.trim()) : (opcionesRaw.includes(';') ? opcionesRaw.split(';').map(o => o.trim()) : opcionesRaw.split(',').map(o => o.trim()));
                 } else if (Array.isArray(opcionesRaw)) {
                     opcionesArr = opcionesRaw;
                 }
@@ -447,7 +447,7 @@ document.getElementById('formPreguntaManual').addEventListener('submit', functio
     const data = {
         pregunta: document.getElementById('mPregunta').value,
         tipo: document.getElementById('mTipo').value,
-        opciones: document.getElementById('mOpciones').value.split(';').map(o => o.trim()),
+        opciones: document.getElementById('mOpciones').value.includes('||') ? document.getElementById('mOpciones').value.split('||').map(o => o.trim()) : document.getElementById('mOpciones').value.split(';').map(o => o.trim()),
         respuestaCorrecta: document.getElementById('mRespuesta').value,
         puntaje: parseInt(document.getElementById('mPuntaje').value),
         categoria: document.getElementById('mCategoria').value,
@@ -473,7 +473,8 @@ document.getElementById('formPreguntaManual').addEventListener('submit', functio
 
 function cargarTablaReportes() {
     const tbody = document.getElementById('tbodyReportes');
-    tbody.innerHTML = `<tr><td colspan="7" class="py-4"><i class="fas fa-spinner fa-spin me-2 text-primary"></i> Cargando...</td></tr>`;
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="8" class="py-4"><i class="fas fa-spinner fa-spin me-2 text-primary"></i> Cargando...</td></tr>`;
 
     fetch(API_URL, {
         method: 'POST',
@@ -485,17 +486,18 @@ function cargarTablaReportes() {
             datosReporteGlobal = res.reporte;
             renderizarTablaReporte(datosReporteGlobal);
         } else {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-danger py-4">Error: ${res.error}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-danger py-4">Error: ${res.error}</td></tr>`;
         }
     })
-    .catch(err => tbody.innerHTML = `<tr><td colspan="7" class="text-danger py-4">Error de red</td></tr>`);
+    .catch(err => tbody.innerHTML = `<tr><td colspan="8" class="text-danger py-4">Error de red</td></tr>`);
 }
 
 function renderizarTablaReporte(lista) {
     const tbody = document.getElementById('tbodyReportes');
+    if (!tbody) return;
     tbody.innerHTML = "";
     if (!lista || lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-muted py-4">No hay registros.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-muted py-4">No hay registros.</td></tr>`;
         return;
     }
     lista.forEach(r => {
@@ -513,54 +515,18 @@ function renderizarTablaReporte(lista) {
                 <td class="text-start fw-semibold">${r.capacitacion}</td>
                 <td class="fw-bold ${esAprobado ? 'text-success' : 'text-danger'}">${califTexto}</td>
                 <td>${esAprobado ? '<span class="badge bg-success">Aprobado</span>' : '<span class="badge bg-danger">Reprobado</span>'}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger" onclick="ejecutarReprobacionAdmin('${r.identificacion}', '${r.idCapacitacion}')" title="Exigir reentrenamiento y reprobar">
+                        <i class="fas fa-redo-alt me-1"></i> Reprobar / Reentrenar
+                    </button>
+                </td>
             </tr>
         `;
     });
 }
 
-function filtrarTablaReportes() {
-    let busqueda = document.getElementById('inputBuscarReporte').value.toLowerCase();
-    let estadoFiltro = document.getElementById('selectFiltroEstado').value.toLowerCase();
-
-    let filtrados = datosReporteGlobal.filter(r => {
-        let coincideTexto = (r.nombreUsuario || '').toLowerCase().includes(busqueda) || 
-                             (r.identificacion || '').toLowerCase().includes(busqueda) || 
-                             (r.capacitacion || '').toLowerCase().includes(busqueda);
-        let coincideEstado = estadoFiltro === "" || (r.estado || '').toLowerCase().includes(estadoFiltro);
-        return coincideTexto && coincideEstado;
-    });
-    renderizarTablaReporte(filtrados);
-}
-// Ejemplo dentro de la función que pinta la tabla de resultados en el Dashboard Admin:
-function renderizarTablaResultados(reporteArray) {
-    const tbody = document.getElementById('cuerpoTablaResultados'); // Ajusta al ID de tu tabla
-    if (!tbody) return;
-    
-    tbody.innerHTML = "";
-
-    reporteArray.forEach(item => {
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${item.fecha || ''}</td>
-            <td><b>${item.identificacion}</b></td>
-            <td>${item.nombreUsuario}</td>
-            <td>${item.cargo} / ${item.area}</td>
-            <td>${item.capacitacion}</td>
-            <td><span class="badge bg-secondary">${item.calificacion}</span></td>
-            <td><span class="badge ${item.estado.toLowerCase().includes('aprobado') ? 'bg-success' : 'bg-danger'}">${item.estado}</span></td>
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-danger" onclick="ejecutarReprobacionAdmin('${item.identificacion}', '${item.idCapacitacion || item.capacitacion}')" title="Exigir reentrenamiento y reprobar">
-                    <i class="fas fa-redo-alt me-1"></i> Reprobar / Reentrenar
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// Función que se ejecuta al hacer clic en el botón
 function ejecutarReprobacionAdmin(identificacion, idCapacitacion) {
-    if (!confirm("¿Está seguro de reprobar a este funcionario? \n\nEsta acción anulará su estado de aprobación actual, conservará la traza histórica y le exigirá obligatoriamente volver a ver el video y presentar el examen.")) {
+    if (!confirm("¿Está seguro de reprobar a este funcionario?\n\nEsta acción registrará un intento fallido en la trazabilidad, anulará su aprobación actual y le exigirá obligatoriamente volver a ver el video y presentar el examen.")) {
         return;
     }
 
@@ -577,14 +543,27 @@ function ejecutarReprobacionAdmin(identificacion, idCapacitacion) {
     .then(res => res.json())
     .then(res => {
         if (res.success) {
-            alert("¡Acción aplicada correctamente! El usuario ahora debe realizar la capacitación nuevamente.");
-            // Recargar los reportes del dashboard
-            cargarReporteResultados(); 
+            alert("¡Acción aplicada con éxito! El funcionario ha sido reprobado administrativamente y deberá realizar el reentrenamiento.");
+            cargarTablaReportes(); 
         } else {
             alert("Error: " + res.error);
         }
     })
-    .catch(err => alert("Error de conexión: " + err));
+    .catch(err => alert("Error de red: " + err));
+}
+
+function filtrarTablaReportes() {
+    let busqueda = document.getElementById('inputBuscarReporte').value.toLowerCase();
+    let estadoFiltro = document.getElementById('selectFiltroEstado').value.toLowerCase();
+
+    let filtrados = datosReporteGlobal.filter(r => {
+        let coincideTexto = (r.nombreUsuario || '').toLowerCase().includes(busqueda) || 
+                             (r.identificacion || '').toLowerCase().includes(busqueda) || 
+                             (r.capacitacion || '').toLowerCase().includes(busqueda);
+        let coincideEstado = estadoFiltro === "" || (r.estado || '').toLowerCase().includes(estadoFiltro);
+        return coincideTexto && coincideEstado;
+    });
+    renderizarTablaReporte(filtrados);
 }
 
 function exportarReporteExcel() {

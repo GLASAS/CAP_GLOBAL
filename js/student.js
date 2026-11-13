@@ -51,7 +51,6 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
         } else {
             contadorPendientes++;
             
-            // Verificamos si el video ya fue visto (Memoria o LocalStorage persistente)
             let tieneVideo = cap.videoUrl && cap.videoUrl.trim() !== "";
             let videoVistoPrevio = isVideoCompleted(cap.id);
             let videoListo = !tieneVideo || videoVistoPrevio;
@@ -135,7 +134,6 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
     if (contadorCulminadas === 0) contenedorCulminadas.innerHTML = `<div class="col-12"><div class="alert alert-light border text-center text-muted py-3 small">Sin capacitaciones culminadas.</div></div>`;
 }
 
-// Función auxiliar para comprobar si el video ya se vio (memoria o localStorage)
 function isVideoCompleted(capId) {
     if (videoCompletadoMap[capId] === true) return true;
     let storageKey = `video_visto_${usuarioIdentificacionGlobal}_${capId}`;
@@ -147,7 +145,6 @@ function isVideoCompleted(capId) {
 }
 
 function iniciarTemporizadorVideo(capId, urlVideo) {
-    // Si ya está completado en persistencia, no hace falta correr el temporizador de nuevo
     if (isVideoCompleted(capId)) return;
     if (videoTimersMap[capId] !== undefined) return;
 
@@ -168,7 +165,6 @@ function iniciarTemporizadorVideo(capId, urlVideo) {
             clearInterval(videoTimersMap[capId]);
             delete videoTimersMap[capId];
             
-            // Guardar estado en memoria y en LocalStorage de forma permanente
             videoCompletadoMap[capId] = true;
             let storageKey = `video_visto_${usuarioIdentificacionGlobal}_${capId}`;
             localStorage.setItem(storageKey, 'true');
@@ -382,21 +378,43 @@ function navegarPregunta(direccion) {
     }
 }
 
+// TEMPORIZADOR VISIBLE Y OPTIMIZADO PARA CADA PREGUNTA
 function reiniciarTemporizador() {
     if (temporizadorInterval) clearInterval(temporizadorInterval);
-    tiempoRestante = 60;
+    tiempoRestante = 60; // 60 segundos por pregunta
+    
     const badgeCronometro = document.getElementById('cronometroExamen');
-    badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
+    if (badgeCronometro) {
+        badgeCronometro.className = "badge bg-danger p-2 fs-5 shadow-sm"; // Más visible y grande
+        badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
+    }
 
     temporizadorInterval = setInterval(() => {
-        tiempoRestante--;
-        badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
-        if (tiempoRestante <= 0) {
-            clearInterval(temporizadorInterval);
-            if (indicePreguntaActual < examenActualGlobal.preguntas.length - 1) navegarPregunta(1);
-            else confirmarEnvioExamen();
-        }
+        tiempoRest_local();
     }, 1000);
+}
+
+function tiempoRest_local() {
+    tiempoRestante--;
+    const badgeCronometro = document.getElementById('cronometroExamen');
+    if (badgeCronometro) {
+        badgeCronometro.innerHTML = `<i class="fas fa-clock me-1"></i> ${tiempoRestante}s`;
+        // Alerta visual si quedan 15 segundos o menos
+        if (tiempoRestante <= 15) {
+            badgeCronometro.className = "badge bg-warning text-dark p-2 fs-5 shadow-sm animate-pulse";
+        } else {
+            badgeCronometro.className = "badge bg-danger p-2 fs-5 shadow-sm";
+        }
+    }
+
+    if (tiempoRestante <= 0) {
+        clearInterval(temporizadorInterval);
+        if (indicePreguntaActual < examenActualGlobal.preguntas.length - 1) {
+            navegarPregunta(1);
+        } else {
+            confirmarEnvioExamen();
+        }
+    }
 }
 
 function confirmarEnvioExamen() {
@@ -416,12 +434,10 @@ function confirmarEnvioExamen() {
     let respuestasFormato = [];
     let aciertosLocales = 0;
 
-    // EVALUACIÓN ESTRICTA LOCAL DE RESPUESTAS CORRECTAS
     examenActualGlobal.preguntas.forEach((p, idx) => {
         let seleccionada = String(respuestasUsuarioMap[idx] || "").trim();
         let correcta = String(p.respuestaCorrecta || "").trim();
 
-        // Normalizamos ambas cadenas para comparar sin que afecten puntos finales, espacios extras o mayúsculas
         let selClean = seleccionada.replace(/\.$/, "").replace(/\s+/g, " ").toLowerCase();
         let corClean = correcta.replace(/\.$/, "").replace(/\s+/g, " ").toLowerCase();
 

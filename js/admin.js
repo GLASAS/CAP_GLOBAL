@@ -531,6 +531,61 @@ function filtrarTablaReportes() {
     });
     renderizarTablaReporte(filtrados);
 }
+// Ejemplo dentro de la función que pinta la tabla de resultados en el Dashboard Admin:
+function renderizarTablaResultados(reporteArray) {
+    const tbody = document.getElementById('cuerpoTablaResultados'); // Ajusta al ID de tu tabla
+    if (!tbody) return;
+    
+    tbody.innerHTML = "";
+
+    reporteArray.forEach(item => {
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${item.fecha || ''}</td>
+            <td><b>${item.identificacion}</b></td>
+            <td>${item.nombreUsuario}</td>
+            <td>${item.cargo} / ${item.area}</td>
+            <td>${item.capacitacion}</td>
+            <td><span class="badge bg-secondary">${item.calificacion}</span></td>
+            <td><span class="badge ${item.estado.toLowerCase().includes('aprobado') ? 'bg-success' : 'bg-danger'}">${item.estado}</span></td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-danger" onclick="ejecutarReprobacionAdmin('${item.identificacion}', '${item.idCapacitacion || item.capacitacion}')" title="Exigir reentrenamiento y reprobar">
+                    <i class="fas fa-redo-alt me-1"></i> Reprobar / Reentrenar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Función que se ejecuta al hacer clic en el botón
+function ejecutarReprobacionAdmin(identificacion, idCapacitacion) {
+    if (!confirm("¿Está seguro de reprobar a este funcionario? \n\nEsta acción anulará su estado de aprobación actual, conservará la traza histórica y le exigirá obligatoriamente volver a ver el video y presentar el examen.")) {
+        return;
+    }
+
+    fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'forzarReprobacionAdmin',
+            data: {
+                identificacionUsuario: identificacion,
+                idCapacitacion: idCapacitacion
+            }
+        })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if (res.success) {
+            alert("¡Acción aplicada correctamente! El usuario ahora debe realizar la capacitación nuevamente.");
+            // Recargar los reportes del dashboard
+            cargarReporteResultados(); 
+        } else {
+            alert("Error: " + res.error);
+        }
+    })
+    .catch(err => alert("Error de conexión: " + err));
+}
 
 function exportarReporteExcel() {
     if (!datosReporteGlobal || datosReporteGlobal.length === 0) { alert('No hay datos.'); return; }

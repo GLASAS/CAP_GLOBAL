@@ -508,16 +508,16 @@ function renderizarTablaReporte(lista) {
 
         tbody.innerHTML += `
             <tr>
-                <td style="font-size: 11px;">${r.fecha}</td>
-                <td class="fw-bold">${r.identificacion}</td>
-                <td class="text-start">${r.nombreUsuario}</td>
-                <td class="text-start text-muted" style="font-size: 11px;">${r.cargo} / ${r.area}</td>
-                <td class="text-start fw-semibold">${r.capacitacion}</td>
-                <td class="fw-bold ${esAprobado ? 'text-success' : 'text-danger'}">${califTexto}</td>
-                <td>${esAprobado ? '<span class="badge bg-success">Aprobado</span>' : '<span class="badge bg-danger">Reprobado</span>'}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger" onclick="ejecutarReprobacionAdmin('${r.identificacion}', '${r.idCapacitacion}')" title="Exigir reentrenamiento y reprobar">
-                        <i class="fas fa-redo-alt me-1"></i> Reprobar / Reentrenar
+                <td style="font-size: 11px;" class="align-middle">${r.fecha}</td>
+                <td class="fw-bold align-middle">${r.identificacion}</td>
+                <td class="text-start align-middle">${r.nombreUsuario}</td>
+                <td class="text-start text-muted align-middle" style="font-size: 11px;">${r.cargo} / ${r.area}</td>
+                <td class="text-start fw-semibold align-middle">${r.capacitacion}</td>
+                <td class="fw-bold align-middle ${esAprobado ? 'text-success' : 'text-danger'}">${califTexto}</td>
+                <td class="align-middle">${esAprobado ? '<span class="badge bg-success">Aprobado</span>' : '<span class="badge bg-danger">Reprobado</span>'}</td>
+                <td class="text-center align-middle">
+                    <button class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-pill shadow-sm fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="ejecutarReprobacionAdmin('${r.identificacion}', '${r.idCapacitacion}')" title="Exigir reentrenamiento y reprobar" style="font-size: 11px; transition: all 0.2s ease-in-out;">
+                        <i class="fas fa-redo-alt text-danger"></i> Reprobar / Reentrenar
                     </button>
                 </td>
             </tr>

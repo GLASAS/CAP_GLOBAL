@@ -51,8 +51,10 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
         } else {
             contadorPendientes++;
             
+            // Verificamos si el video ya fue visto (Memoria o LocalStorage persistente)
             let tieneVideo = cap.videoUrl && cap.videoUrl.trim() !== "";
-            let videoListo = !tieneVideo || videoCompletadoMap[cap.id] === true;
+            let videoVistoPrevio = isVideoCompleted(cap.id);
+            let videoListo = !tieneVideo || videoVistoPrevio;
 
             let textoBotonExamen = sinIntentos ? 'Intentos Agotados' : 'Presentar Examen';
             let claseBotonExamen = sinIntentos ? 'btn-secondary' : (videoListo ? 'btn-success' : 'btn-secondary');
@@ -78,12 +80,12 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
 
         let botonVideoHtml = "";
         if (cap.videoUrl && cap.videoUrl.trim() !== "") {
-            let yaVisto = videoCompletadoMap[cap.id] === true;
+            let yaVisto = isVideoCompleted(cap.id);
             let timerActivo = videoTimersMap[cap.id] !== undefined;
 
             let estadoVideoHtml = "";
             if (yaVisto) {
-                estadoVideoHtml = `<span class="badge bg-success mt-1 d-block"><i class="fas fa-check-circle"></i> Video visto (3 min cumplidos) - Examen habilitado</span>`;
+                estadoVideoHtml = `<span class="badge bg-success mt-1 d-block"><i class="fas fa-check-circle"></i> Video visto y validado - Examen habilitado</span>`;
             } else if (timerActivo) {
                 estadoVideoHtml = `<span id="timer_video_lbl_${cap.id}" class="badge bg-warning text-dark mt-1 d-block"><i class="fas fa-clock fa-spin"></i> Viendo video... (Esperando 3 min)</span>`;
             } else {
@@ -133,10 +135,23 @@ function renderizarCapacitacionesUsuario(capacitaciones) {
     if (contadorCulminadas === 0) contenedorCulminadas.innerHTML = `<div class="col-12"><div class="alert alert-light border text-center text-muted py-3 small">Sin capacitaciones culminadas.</div></div>`;
 }
 
-function iniciarTemporizadorVideo(capId, urlVideo) {
-    if (videoCompletadoMap[capId] === true || videoTimersMap[capId] !== undefined) return;
+// Función auxiliar para comprobar si el video ya se vio (memoria o localStorage)
+function isVideoCompleted(capId) {
+    if (videoCompletadoMap[capId] === true) return true;
+    let storageKey = `video_visto_${usuarioIdentificacionGlobal}_${capId}`;
+    if (localStorage.getItem(storageKey) === 'true') {
+        videoCompletadoMap[capId] = true;
+        return true;
+    }
+    return false;
+}
 
-    let segundosRestantes = 180; // 3 minutos
+function iniciarTemporizadorVideo(capId, urlVideo) {
+    // Si ya está completado en persistencia, no hace falta correr el temporizador de nuevo
+    if (isVideoCompleted(capId)) return;
+    if (videoTimersMap[capId] !== undefined) return;
+
+    let segundosRestantes = 180; // 3 minutos exactos
     videoTimersMap[capId] = setInterval(() => {
         segundosRestantes--;
         let min = Math.floor(segundosRestantes / 60);
@@ -152,7 +167,11 @@ function iniciarTemporizadorVideo(capId, urlVideo) {
         if (segundosRestantes <= 0) {
             clearInterval(videoTimersMap[capId]);
             delete videoTimersMap[capId];
+            
+            // Guardar estado en memoria y en LocalStorage de forma permanente
             videoCompletadoMap[capId] = true;
+            let storageKey = `video_visto_${usuarioIdentificacionGlobal}_${capId}`;
+            localStorage.setItem(storageKey, 'true');
 
             alert('¡Tiempo de estudio del video completado! Ya puedes presentar tu evaluación.');
             if (cacheCapacitacionesUsuario) {
@@ -220,13 +239,12 @@ function iniciarExamen(capId) {
     .then(res => res.json())
     .then(res => {
         if(res.success) {
-            // PROCESAMIENTO ROBUSTO DE LA CELDA E (Opciones_Json)
+            // PROCESAMIENTO LIMPIO DE LA CELDA E (Opciones_Json separadas por ;)
             let preguntasValidas = (res.preguntas || []).filter(p => {
                 if (!p || !p.pregunta) return false;
                 let txt = String(p.pregunta).trim();
                 return txt !== "";
             }).map(p => {
-                // Si p.opciones viene como texto plano separado por punto y coma (Celda E), lo convertimos en array limpiamente
                 let opcionesArray = [];
                 if (Array.isArray(p.opciones)) {
                     opcionesArray = p.opciones;
@@ -234,12 +252,10 @@ function iniciarExamen(capId) {
                     opcionesArray = p.opciones.split(';');
                 }
 
-                // Limpieza individual de cada opción de la celda E
                 let opcionesLimpias = opcionesArray
                     .map(op => String(op).trim())
                     .filter(op => op !== "");
 
-                // Eliminar duplicados exactos
                 opcionesLimpias = [...new Set(opcionesLimpias)];
 
                 return {
@@ -420,10 +436,8 @@ function confirmarEnvioExamen() {
         });
     });
 
-    // Cálculo exacto de la nota local (0% a 100%)
     let calificacionCalculada = Math.round((aciertosLocales / totalPreguntas) * 100);
     let notaMinimaReq = parseFloat(examenActualGlobal.notaMinima) || 70;
-    let apruebaFinal = calificacionCalculada >= notaMinimaReq;
 
     fetch(API_URL, {
         method: 'POST',
@@ -441,7 +455,6 @@ function confirmarEnvioExamen() {
     .then(res => {
         cacheCapacitacionesUsuario = null;
         
-        // FORZAMOS EL USO DE LA CALIFICACIÓN LOCAL ESTRICTA (Ignorando si el servidor devolvía 100% por defecto)
         let califFinal = calificacionCalculada;
         let finalAprueba = califFinal >= notaMinimaReq;
 
@@ -455,7 +468,6 @@ function confirmarEnvioExamen() {
         cargarCapacitacionesParaUsuario();
     })
     .catch(err => {
-        // Fallback local seguro si ocurre un fallo de red
         cacheCapacitacionesUsuario = null;
         let califFinal = calificacionCalculada;
         let finalAprueba = califFinal >= notaMinimaReq;
